@@ -1,7 +1,7 @@
 {
     "name": "ms_tmr32",
     "description": "A Controller for Quad I/O SPI PSRAM",
-    "repo": "github.com/shalan/ms_psram_ctrl",
+    "repo": "github.com/shalan/EF_PSRAM_CTRL",
     "author": "Mohamed Shalan",
     "email": "mshalan@aucegypt.edu",
     "version": "0.9",
