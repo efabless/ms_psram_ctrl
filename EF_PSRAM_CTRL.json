@@ -25,9 +25,9 @@
         "clock_freq_mhz": "10",
         "supply_voltage": "n/a"
     },
-    "clock": "clk", // make sure this is correct
+    "clock": "HCLK",
     "reset": {
-        "name": "rst_n",
+        "name": "HRESETn",
         "pol": "0"
     }
 }
