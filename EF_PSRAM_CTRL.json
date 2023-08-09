@@ -1,6 +1,6 @@
 {
     "info": {
-        "name": "EF_TMR32",
+        "name": "EF_PSRAM_CTRL",
         "description": "A Controller for Quad I/O SPI PSRAM",
         "repo": "github.com/shalan/EF_PSRAM_CTRL",
         "owner": "efabless",
@@ -23,7 +23,9 @@
         "height": "0.0",
         "technology": "n/a",
         "clock_freq_mhz": "10",
-        "supply_voltage": "n/a"
+        "supply_voltage": [
+            "n/a"
+        ]
     },
     "clock": "HCLK",
     "reset": {
