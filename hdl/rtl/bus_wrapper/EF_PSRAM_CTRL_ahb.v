@@ -42,18 +42,19 @@
 `default_nettype        none
 
 // Using EBH Command
-module ms_psram_ctrl_wb (
-    // WB bus Interface
-    input   wire        clk_i,
-    input   wire        rst_i,
-    input   wire [31:0] adr_i,
-    input   wire [31:0] dat_i,
-    output  wire [31:0] dat_o,
-    input   wire [3:0]  sel_i,
-    input   wire        cyc_i,
-    input   wire        stb_i,
-    output  reg         ack_o,
-    input   wire        we_i,
+module EF_PSRAM_CTRL_ahb (
+    // AHB-Lite Slave Interface
+    input   wire            HCLK,
+    input   wire            HRESETn,
+    input   wire            HSEL,
+    input   wire [31:0]     HADDR,
+    input   wire [31:0]     HWDATA,
+    input   wire [1:0]      HTRANS,
+    input   wire [2:0]      HSIZE,
+    input   wire            HWRITE,
+    input   wire            HREADY,
+    output  reg             HREADYOUT,
+    output  wire [31:0]     HRDATA,
 
     // External Interface to Quad I/O
     output  wire            sck,
@@ -86,69 +87,8 @@ module ms_psram_ctrl_wb (
 
     wire        doe;
 
-    // WB Control Signals
-    wire        wb_valid        =   cyc_i & stb_i;
-    wire        wb_we           =   we_i & wb_valid;
-    wire        wb_re           =   ~we_i & wb_valid;
-    wire[3:0]   wb_byte_sel     =   sel_i & {4{wb_we}};
-    
-    // The FSM
     reg         state, nstate;
-    always @ (posedge clk_i or posedge rst_i)
-        if(rst_i) 
-            state <= ST_IDLE;
-        else 
-            state <= nstate;
 
-    always @* begin
-        case(state)
-            ST_IDLE :   
-                if(wb_valid) 
-                    nstate = ST_WAIT;
-                else
-                    nstate = ST_IDLE;
-
-            ST_WAIT :   
-                if((mw_done & wb_we) | (mr_done & wb_re))   
-                    nstate = ST_IDLE;
-                else
-                    nstate = ST_WAIT; 
-        endcase
-    end
-
-    wire [2:0]  size =  (sel_i == 4'b0001) ? 1 :
-                        (sel_i == 4'b0010) ? 1 :
-                        (sel_i == 4'b0100) ? 1 :
-                        (sel_i == 4'b1000) ? 1 :
-                        (sel_i == 4'b0011) ? 2 :
-                        (sel_i == 4'b1100) ? 2 :
-                        (sel_i == 4'b1111) ? 4 : 4;
-
-    
-    
-    wire [7:0]  byte0 = (sel_i[0])          ? dat_i[7:0]   :
-                        (sel_i[1] & size==1)? dat_i[15:8]  :
-                        (sel_i[2] & size==1)? dat_i[23:16] :
-                        (sel_i[3] & size==1)? dat_i[31:24] :
-                        (sel_i[2] & size==2)? dat_i[23:16] :
-                        dat_i[7:0];
-
-    wire [7:0]  byte1 = (sel_i[1])          ? dat_i[15:8]  :
-                        dat_i[31:24];
-                        
-    wire [7:0]  byte2 = dat_i[23:16];
-
-    wire [7:0]  byte3 = dat_i[31:24];
-    
-    wire [31:0] wdata = {byte3, byte2, byte1, byte0}; 
-
-    wire [1:0]  waddr = (size==1 && sel_i[0]==1) ? 2'b00 :
-                        (size==1 && sel_i[1]==1) ? 2'b01 :
-                        (size==1 && sel_i[2]==1) ? 2'b10 :
-                        (size==1 && sel_i[3]==1) ? 2'b11 :
-                        (size==2 && sel_i[2]==1) ? 2'b10 :
-                        2'b00;
-    /*
     //AHB-Lite Address Phase Regs
     reg         last_HSEL;
     reg [31:0]  last_HADDR;
@@ -171,9 +111,9 @@ module ms_psram_ctrl_wb (
             last_HSIZE      <= HSIZE;
         end
     end
-    
-    always @ (posedge clk_i or posedge rst_i)
-        if(rst_i) 
+
+    always @ (posedge HCLK or negedge HRESETn)
+        if(HRESETn == 0) 
             state <= ST_IDLE;
         else 
             state <= nstate;
@@ -194,7 +134,6 @@ module ms_psram_ctrl_wb (
         endcase
     end
 
-    
     // HREADYOUT Generation
     always @(posedge HCLK or negedge HRESETn)
         if(!HRESETn) 
@@ -213,18 +152,18 @@ module ms_psram_ctrl_wb (
                     else 
                         HREADYOUT <= 1'b0;
             endcase
-    */
-    assign mr_rd    = ( (state==ST_IDLE ) & wb_re );
-    assign mw_wr    = ( (state==ST_IDLE ) & wb_we );
-    
+
+    assign mr_rd    = ( ahb_addr_phase & (state==ST_IDLE ) & ~HWRITE );
+    assign mw_wr    = ( ahb_addr_phase & (state==ST_IDLE ) & HWRITE );
+
     PSRAM_READER MR (   
-        .clk(clk_i), 
-        .rst_n(~rst_i), 
-        .addr({adr_i[23:0]}), 
+        .clk(HCLK), 
+        .rst_n(HRESETn), 
+        .addr({HADDR[23:0]}), 
         .rd(mr_rd), 
-        //.size(size), Always read a word
+        .size(size),
         .done(mr_done), 
-        .line(dat_o),
+        .line(HRDATA),
         .sck(mr_sck), 
         .ce_n(mr_ce_n), 
         .din(mr_din), 
@@ -233,13 +172,13 @@ module ms_psram_ctrl_wb (
     );
 
     PSRAM_WRITER MW (   
-        .clk(clk_i), 
-        .rst_n(~rst_i), 
-        .addr({adr_i[23:0]}), 
+        .clk(HCLK), 
+        .rst_n(HRESETn), 
+        .addr({HADDR[23:0]}), 
         .wr(mw_wr), 
         .size(size),
         .done(mw_done), 
-        .line(wdata),
+        .line(HWDATA),
         .sck(mw_sck), 
         .ce_n(mw_ce_n), 
         .din(mw_din), 
@@ -247,14 +186,14 @@ module ms_psram_ctrl_wb (
         .douten(mw_doe) 
     );
 
-    assign sck  = wb_we ? mw_sck  : mr_sck;
-    assign ce_n = wb_we ? mw_ce_n : mr_ce_n;
-    assign dout = wb_we ? mw_dout : mr_dout;
-    assign douten  = wb_we ? {4{mw_doe}}  : {4{mr_doe}};
+    assign sck  = last_HWRITE ? mw_sck  : mr_sck;
+    assign ce_n = last_HWRITE ? mw_ce_n : mr_ce_n;
+    assign dout = last_HWRITE ? mw_dout : mr_dout;
+    assign douten  = last_HWRITE ? {4{mw_doe}}  : {4{mr_doe}};
     
     assign mw_din = din;
     assign mr_din = din;
-    assign ack_o = wb_we ? mw_done :mr_done ;
+
 endmodule
 
 module PSRAM_READER (
@@ -276,7 +215,7 @@ module PSRAM_READER (
     localparam  IDLE = 1'b0, 
                 READ = 1'b1;
 
-    wire [7:0]  FINAL_COUNT = 27 +2;   // Always read 1 word // for waiting for last word
+    wire [7:0]  FINAL_COUNT = 27; //19 + size*2; // Always read 1 word
 
     reg         state, nstate;
     reg [7:0]   counter;
@@ -328,7 +267,7 @@ module PSRAM_READER (
             saddr <= {addr[23:2], 2'b0};
 
     // Sample with the negedge of sck
-    wire[7:0] byte_index = counter/2 - 11; // to start from 0
+    wire[7:0] byte_index = counter/2 - 10;
     always @ (posedge clk)
         if(counter >= 20 && counter <= FINAL_COUNT)
             if(sck) 
@@ -343,7 +282,7 @@ module PSRAM_READER (
                         (counter == 13) ?   saddr[3:0]          :
                         4'h0;    
         
-    assign douten   = (counter < 14)  & (state != IDLE);
+    assign douten   = (counter < 14);
 
     assign done     = (counter == FINAL_COUNT+1);
 
@@ -376,7 +315,7 @@ module PSRAM_WRITER (
     localparam  IDLE = 1'b0, 
                 READ = 1'b1;
 
-    wire[7:0]        FINAL_COUNT = 13 + size*2 +1; // +1 wait for last word
+    wire[7:0]        FINAL_COUNT = 13 + size*2;
 
     reg         state, nstate;
     reg [7:0]   counter;

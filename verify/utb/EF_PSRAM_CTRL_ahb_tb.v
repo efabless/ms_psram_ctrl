@@ -1,4 +1,4 @@
-module ms_psram_ctrl_ahb_tb;
+module EF_PSRAM_CTRL_ahb_tb;
     wire[3:0] dio;
     reg            HCLK = 0;
     reg            HRESETn = 0;
@@ -20,7 +20,7 @@ module ms_psram_ctrl_ahb_tb;
 
     `include "AHB_tasks.vh"
 
-    ms_psram_ctrl_ahb psram_ctrl(
+    EF_PSRAM_CTRL_ahb psram_ctrl(
         // AHB-Lite Slave Interface
         .HCLK(HCLK),
         .HRESETn(HRESETn),
