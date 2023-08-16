@@ -14,7 +14,7 @@
 	limitations under the License.
 */
 
-module EF_PSRAM_CTRL_ahb_tb;
+module EF_PSRAM_CTRL_ahbl_tb;
     wire[3:0] dio;
     reg            HCLK = 0;
     reg            HRESETn = 0;
@@ -70,7 +70,7 @@ module EF_PSRAM_CTRL_ahb_tb;
     );
 
     initial begin
-        $dumpfile("EF_PSRAM_CTRL_ahb_tb.vcd");
+        $dumpfile("EF_PSRAM_CTRL_ahbl_tb.vcd");
         $dumpvars;
         #999;
         @(posedge HCLK)
