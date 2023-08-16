@@ -1,5 +1,7 @@
 /*
-	Copyright 2023 Mohamed Shalan
+	Copyright 2020 Efabless Corp.
+
+	Author: Mohamed Shalan (mshalan@efabless.com)
 	
 	Licensed under the Apache License, Version 2.0 (the "License"); 
 	you may not use this file except in compliance with the License. 
@@ -10,32 +12,6 @@
 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 	See the License for the specific language governing permissions and 
 	limitations under the License.
-*/
-/*
-    QSPI PSRAM Controller (AHB-lite Slave)
-
-    Pseudostatic RAM (PSRAM) is DRAM combined with a self-refresh circuit. 
-    It appears externally as slower SRAM, albeit with a density/cost advantage 
-    over true SRAM, and without the access complexity of DRAM.
-
-    The controller was designed after https://www.issi.com/WW/pdf/66-67WVS4M8ALL-BLL.pdf
-    utilizing both EBh and 38h commands for reading and writting.
-
-*/
-
-/*
-        Benchmark data collected using CM0 CPU when memory is PSRAM only
-        
-        Benchmark       PSRAM (us)  1-cycle SRAM (us)   Slow-down
-        xtea            840         212                 3.94
-        stress          1607        446                 3.6
-        hash            5340        1281                4.16
-        chacha          2814        320                 8.8
-        aes sbox        2370        322                 7.3
-        nqueens         3496        459                 7.6
-        mtrans          2171        2034                1.06
-        rle             903         155                 5.8
-        prime           549         97                  5.66
 */
 
 `timescale              1ns/1ps
@@ -148,72 +124,7 @@ module EF_PSRAM_CTRL_wb (
                         (size==1 && sel_i[3]==1) ? 2'b11 :
                         (size==2 && sel_i[2]==1) ? 2'b10 :
                         2'b00;
-    /*
-    //AHB-Lite Address Phase Regs
-    reg         last_HSEL;
-    reg [31:0]  last_HADDR;
-    reg         last_HWRITE;
-    reg [1:0]   last_HTRANS;
-    reg [2:0]   last_HSIZE;
-
-    wire [2:0]  size =  (last_HSIZE == 0) ? 1 :
-                        (last_HSIZE == 1) ? 2 :
-                        (last_HSIZE == 2) ? 4 : 4;
-
-    wire        ahb_addr_phase  = HTRANS[1] & HSEL & HREADY;
-
-    always@ (posedge HCLK) begin
-        if(HREADY) begin
-            last_HSEL       <= HSEL;
-            last_HADDR      <= HADDR;
-            last_HWRITE     <= HWRITE;
-            last_HTRANS     <= HTRANS;
-            last_HSIZE      <= HSIZE;
-        end
-    end
     
-    always @ (posedge clk_i or posedge rst_i)
-        if(rst_i) 
-            state <= ST_IDLE;
-        else 
-            state <= nstate;
-
-    always @* begin
-        case(state)
-            ST_IDLE :   
-                if(ahb_addr_phase) 
-                    nstate = ST_WAIT;
-                else
-                    nstate = ST_IDLE;
-
-            ST_WAIT :   
-                if((mw_done & last_HWRITE) | (mr_done & ~last_HWRITE))   
-                    nstate = ST_IDLE;
-                else
-                    nstate = ST_WAIT; 
-        endcase
-    end
-
-    
-    // HREADYOUT Generation
-    always @(posedge HCLK or negedge HRESETn)
-        if(!HRESETn) 
-            HREADYOUT <= 1'b1;
-        else
-            case (state)
-                ST_IDLE :   
-                    if(ahb_addr_phase) 
-                        HREADYOUT <= 1'b0;
-                    else 
-                        HREADYOUT <= 1'b1;
-
-                ST_WAIT :   
-                    if((mw_done & last_HWRITE) | (mr_done & ~last_HWRITE))  
-                        HREADYOUT <= 1'b1;
-                    else 
-                        HREADYOUT <= 1'b0;
-            endcase
-    */
     assign mr_rd    = ( (state==ST_IDLE ) & wb_re );
     assign mw_wr    = ( (state==ST_IDLE ) & wb_we );
     
@@ -257,6 +168,7 @@ module EF_PSRAM_CTRL_wb (
     assign ack_o = wb_we ? mw_done :mr_done ;
 endmodule
 
+/*
 module PSRAM_READER (
     input   wire            clk,
     input   wire            rst_n,
@@ -449,3 +361,4 @@ module PSRAM_WRITER (
 
 
 endmodule
+*/
