@@ -28,7 +28,7 @@ module EF_PSRAM_CTRL_wb (
     input   wire [3:0]  sel_i,
     input   wire        cyc_i,
     input   wire        stb_i,
-    output  reg         ack_o,
+    output  wire        ack_o,
     input   wire        we_i,
 
     // External Interface to Quad I/O
@@ -131,9 +131,10 @@ module EF_PSRAM_CTRL_wb (
     PSRAM_READER MR (   
         .clk(clk_i), 
         .rst_n(~rst_i), 
-        .addr({adr_i[23:0]}), 
+        .addr({adr_i[23:2],2'b0}), 
         .rd(mr_rd), 
         //.size(size), Always read a word
+        .size(3'd4),
         .done(mr_done), 
         .line(dat_o),
         .sck(mr_sck), 
