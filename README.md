@@ -14,7 +14,7 @@ The controller comes with two versions for both AHB and Wishbone (classical) bus
 The controller is very small in size. It is synthesized to around 500 cells.
 
 ## Interface
-<img src="./doc/EF_PSRAM_CTRL_ahb.svg" alt= “” width="60%" height="60%">
+<img src="./doc/_static/EF_PSRAM_CTRL_ahb.svg" alt= “” width="60%" height="60%">
 
 ## Performance
 The controller supports quad I/O SPI interface. However better than the classical serial SPI, reading and writing require several cycles depending the amount of data being read or written. Moreover, data reads are slower than data writes. Hence using PSRAM as the data memory in embedded applications slows down the system. Typically, a smaller (mor expensive) internal SRAM is used for frequent data objects and the large slow PSRAM is used for less frequent data objects. 
