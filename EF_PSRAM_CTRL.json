@@ -2,7 +2,7 @@
     "info": {
         "name": "EF_PSRAM_CTRL",
         "description": "A Controller for Quad I/O SPI PSRAM",
-        "repo": "github.com/shalan/EF_PSRAM_CTRL",
+        "repo": "github.com/efabless/EF_PSRAM_CTRL",
         "owner": "Efabless Corp.",
         "license": "Apache 2.0",
         "author": "Mohamed Shalan",
